@@ -25,16 +25,16 @@ void SendVals(int val, int &fd) {
     // Write data to pipe
     write(fd[1], val);
     close(fd[1]);
-    exit(EXIT_SUCCESS);
+    pthread_exit();
 }
 
-void MultVals(int val, int &fd) {
+int MultVals(int val, int &fd) {
     // Not writing
     close(fd[1]);
     // Read data from pipe
     int received = read(fd[0]);
     close(fd[0]);
-    exit(EXIT_SUCCESS);
+    pthread_exit(val * received);
 }
 
 int main(int argc, char** argv) {
@@ -46,27 +46,44 @@ int main(int argc, char** argv) {
     std::vector <pthread_t> threads;
 	
 	for(int i = 0; i < NUM_THREADS/2; i++) {
-        pthread_t threadA, threadB;
+        // Create pipe
         int fd[2];
+        status = pipe(fd);
+        if (status == -1) {
+           std::cout << "Error:unable to create pipe" << endl;
+        }
+
+        // Create threads
+        pthread_t threadA, threadB;
 		t1 = pthread_create(&threadA, NULL, SendVals, A[I], &fd);
 
         if (t1) {
-            cout << "Error:unable to create thread," << t << endl;
+            cout << "Error:unable to create thread," << t1 << endl;
             exit(-1);
         } else {
-            threads.push_back(std::move(t));
+            threads.push_back(std::move(t1));
         }
 
         t2 = pthread_create(&threadB, NULL, MultVals, B[I], &fd);
 
         if (t2) {
-            cout << "Error:unable to create thread," << t << endl;
+            cout << "Error:unable to create thread," << t2 << endl;
             exit(-1);
         } else {
-            threads.push_back(std::move(t));
+            threads.push_back(std::move(t2));
         }
 		
 	}
+    int final;
+    for (int i = 0; i < NUM_THREADS; i++) {
+        void *res;
+        int status = pthread_join(threads[i], &res);
+        if (status == -1) {
+            std::cout << "pthread_join failed" << threads[i] << endl;
+        }
+        final = final + *res;
+    }
+    std::cout << "Final multiplication result: " << final << endl;
 
-
+    return 0;
 }
