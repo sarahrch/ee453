@@ -19,28 +19,33 @@ For example, send the element in thread 1 (the first element in A) to thread 6 a
 
 // Must be run on Linux system
 
-void SendVals(int val, int &fd) {
+// TODO: Change to declare pipes globally
+
+void SendVals(int val, int fd) {
     // Not reading
     close(fd[0]);
     // Write data to pipe
     write(fd[1], val);
     close(fd[1]);
-    pthread_exit();
+    pthread_exit(NULL);
 }
 
-int MultVals(int val, int &fd) {
+void MultVals(int val, int fd) {
     // Not writing
     close(fd[1]);
     // Read data from pipe
     int received = read(fd[0]);
     close(fd[0]);
-    pthread_exit(val * received);
+    pthread_exit((void*)(val * received));
 }
 
 int main(int argc, char** argv) {
 
-    int NUM_THREADS = 10;
+    int SIZE = 10;
     // Take A, B value input ? <- see if we need to do this
+
+    int A[SIZE/2] = {1, 2, 3, 4, 5};
+    int B[SIZE/2] = {6, 7, 8, 9, 10};
 
     // Create threads and send A, B values
     std::vector <pthread_t> threads;
@@ -50,24 +55,24 @@ int main(int argc, char** argv) {
         int fd[2];
         status = pipe(fd);
         if (status == -1) {
-           std::cout << "Error:unable to create pipe" << endl;
+           std::cout << "Error:unable to create pipe" << std::endl;
         }
 
         // Create threads
         pthread_t threadA, threadB;
-		t1 = pthread_create(&threadA, NULL, SendVals, A[I], &fd);
+		t1 = pthread_create(&threadA, NULL, SendVals, A[I], fd[1]);
 
         if (t1) {
-            cout << "Error:unable to create thread," << t1 << endl;
+            std::cout << "Error:unable to create thread," << t1 << std::endl;
             exit(-1);
         } else {
             threads.push_back(std::move(t1));
         }
 
-        t2 = pthread_create(&threadB, NULL, MultVals, B[I], &fd);
+        t2 = pthread_create(&threadB, NULL, MultVals, B[I], fd[0]);
 
         if (t2) {
-            cout << "Error:unable to create thread," << t2 << endl;
+            std::cout << "Error:unable to create thread," << t2 << std::endl;
             exit(-1);
         } else {
             threads.push_back(std::move(t2));
