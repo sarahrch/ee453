@@ -49,7 +49,7 @@ void* MultVals(void* args) {
     int i = recv_args->index;
     int b_val = recv_args->array_val;
 
-    // Read data from pipe -- not really sure what the purpose of piping the data is.. inefficient?
+    // Read data from pipe -- not really sure what the purpose of using more threads and then piping the data is.. inefficient?
     thread_args *a_args;
     int received = read(fd[i%(SIZE/2)][0], &a_args, sizeof(thread_args*));
     if (received == -1) {
