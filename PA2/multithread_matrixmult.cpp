@@ -23,21 +23,30 @@ For example, send the element in thread 1 (the first element in A) to thread 6 a
 const int SIZE = 10; // Total number of threads (Inner matrix size * 2)
 int fd[SIZE/2][2]; // Pipes for each pair of values
 
+struct thread_args {
+    int index;
+    int array_val;
+};
 
-void SendVals(const void* i, const void* v) {
+void SendVals(const void* args) { 
+    thread_args *recv_args = (thread_args*)args;
+    int i = recv_args->index;
+    int v = recv_args->array_val;
+    
     // Not reading
     close(fd[i%(SIZE/2)][0]);
     // Write data to pipe
     write(fd[i%(SIZE/2)][1], v, sizeof(int));
     close(fd[i%(SIZE/2)][1]);
+
+    delete *args;
     pthread_exit(NULL);
 }
 
-void MultVals(const void* i, const void* v) {
-    // Make sure to cast these values immediately -- will this solve the issue of &i or &v changing
-    // before the values are captured?
-    int i = (int)i;
-    int val = (int)v;
+void MultVals(const void* args) {
+    thread_args *recv_args = (thread_args*)args;
+    int i = recv_args->index;
+    int v = recv_args->array_val;
 
     // Not writing
     close(fd[i%(SIZE/2)][1]);
@@ -47,8 +56,11 @@ void MultVals(const void* i, const void* v) {
     if (received == -1) {
         std::cout << "Error reading from file descriptor" << std::endl;
     }
+    int a_val = (*(int*)buf);
     close(fd[i%(SIZE/2)][0]);
-    pthread_exit((void*)(val * (int)buf));
+
+    delete *args;
+    pthread_exit((void*)(a_val * b_val));
 }
 
 int main(int argc, char** argv) {
@@ -69,24 +81,33 @@ int main(int argc, char** argv) {
            std::cout << "Error:unable to create pipe" << std::endl;
         }
 
+        // Allocate mem for passed values
+        thread_args *args_A = new thread_args;
+        args_A->index = i;
+        args_A->array_val = A[i];
+
+        thread_args *args_B = new thread_args;
+        args_B->index = i;
+        args_B->array_val = B[i];
+
         // Create threads
         pthread_t threadA, threadB;
-		threadA = pthread_create(&threadA, NULL, SendVals, i, A[i]);
+		threadA = pthread_create(&threadA, NULL, SendVals, args_A);
 
         if (threadA) {
-            std::cout << "Error:unable to create thread," << t1 << std::endl;
+            std::cout << "Error:unable to create thread," << threadA << std::endl;
             exit(-1);
         } else {
-            threads.push_back(std::move(t1));
+            threads.push_back(std::move(threadA));
         }
 
-        threadB = pthread_create(&threadB, NULL, MultVals, i, B[i]);
+        threadB = pthread_create(&threadB, NULL, MultVals, args_B);
 
         if (threadB) {
-            std::cout << "Error:unable to create thread," << t2 << std::endl;
+            std::cout << "Error:unable to create thread," << threadB << std::endl;
             exit(-1);
         } else {
-            threads.push_back(std::move(t2));
+            threads.push_back(std::move(threadB));
         }
 		
 	}
@@ -98,7 +119,7 @@ int main(int argc, char** argv) {
             std::cout << "pthread_join failed" << threads[i] << endl;
         }
         if (return_val != NULL) {
-            final = final + (int)return_val;
+            final = final + (long)return_val; // Tricking compiler? Not sure if this is the way it is conventionally done
         }
     }
     std::cout << "Final multiplication result: " << final << endl;
