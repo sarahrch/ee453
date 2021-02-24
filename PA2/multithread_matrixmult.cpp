@@ -26,41 +26,42 @@ int fd[SIZE/2][2]; // Pipes for each pair of values
 struct thread_args {
     int index;
     int array_val;
+    int return_val;
 };
 
-void SendVals(const void* args) { 
+void* SendVals(void* args) { 
     thread_args *recv_args = (thread_args*)args;
     int i = recv_args->index;
-    int v = recv_args->array_val;
     
     // Not reading
     close(fd[i%(SIZE/2)][0]);
     // Write data to pipe
-    write(fd[i%(SIZE/2)][1], v, sizeof(int));
+    write(fd[i%(SIZE/2)][1], recv_args, sizeof(thread_args));
     close(fd[i%(SIZE/2)][1]);
 
-    delete *args;
     pthread_exit(NULL);
 }
 
-void MultVals(const void* args) {
+void* MultVals(void* args) {
     thread_args *recv_args = (thread_args*)args;
     int i = recv_args->index;
-    int v = recv_args->array_val;
+    int b_val = recv_args->array_val;
 
     // Not writing
     close(fd[i%(SIZE/2)][1]);
-    // Read data from pipe
+    // Read data from pipe -- not really sure what the purpose of piping the data is.. inefficient?
     void* buf;
-    int received = read(fd[i%(SIZE/2)][0], buf, sizeof(int));
+    int received = read(fd[i%(SIZE/2)][0], &buf, sizeof(thread_args));
     if (received == -1) {
         std::cout << "Error reading from file descriptor" << std::endl;
     }
-    int a_val = (*(int*)buf);
+    thread_args *a_args = (thread_args*)buf;
+    int a_val = a_args->array_val;
     close(fd[i%(SIZE/2)][0]);
 
-    delete *args;
-    pthread_exit((void*)(a_val * b_val));
+    delete a_args;
+    recv_args->return_val = a_val * b_val;
+    pthread_exit(recv_args);
 }
 
 int main(int argc, char** argv) {
@@ -111,16 +112,17 @@ int main(int argc, char** argv) {
         }
 		
 	}
-    long final;
+    int final;
     for (int i = 0; i < SIZE; i++) {
-        void *return_val;
-        int status = pthread_join(threads[i], &return_val);
+        void *retval;
+        int status = pthread_join(threads[i], &retval);
         if (status) {
             std::cout << "pthread_join failed" << threads[i] << endl;
         }
-        if (return_val != NULL) {
-            final = final + (long)return_val; // Tricking compiler? Not sure if this is the way it is conventionally done
-        }
+        thread_args *thread_return = (thread_args*)(retval);
+        int returned_value = thread_return->return_val;
+        final += returned_value;
+        delete thread_return;
     }
     std::cout << "Final multiplication result: " << final << endl;
 
