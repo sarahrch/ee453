@@ -1,7 +1,9 @@
 #include <iostream>
 #include <vector>
-#include <pthread.h>
-#include <unistd.h>
+#include <pthread.h> 
+#include <unistd.h> // --https://pubs.opengroup.org/onlinepubs/009604499/functions/pipe.html
+#include <time.h> //--https://www.tutorialspoint.com/c_standard_library/time_h.htm
+
 using namespace std;
 
 // #define ENABLE_DEBUG 
@@ -76,6 +78,9 @@ void* MultVals(void* args) {
 
 int main(int argc, char** argv) {
 
+    clock_t start,end;
+	start = clock();
+
     // Take A, B value input ? <- see if we need to do this
 
     int A[SIZE/2] = {1, 2, 3, 4, 5};
@@ -142,7 +147,12 @@ int main(int argc, char** argv) {
             #endif
         }
     }
+
+    end = clock();
+    double timeElapsed = ((double)((end-start)))/(double)(CLOCKS_PER_SEC);
+
     std::cout << "Final multiplication result: " << final << std::endl;
+    std::cout << "Time: " << timeElapsed << " seconds" << std::endl;
 
     return 0;
 }
