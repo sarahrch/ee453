@@ -4,6 +4,9 @@
 #include <unistd.h>
 using namespace std;
 
+// #define ENABLE_DEBUG 
+    //-- https://www.learncpp.com/cpp-tutorial/more-debugging-tactics/
+
 /*
 Assignment: These threads share the process's resources but are able to execute independently.
 In this problem, you will implement a 10 threads C/C++ program to parallel compute matrix multiplication between a 1x5 matrix (matrix A) and 5x1 matrix (matrix B).
@@ -26,7 +29,6 @@ int fd[SIZE/2][2]; // Pipes for each pair of values
 struct thread_args {
     int index;
     int array_val;
-    int return_val;
 };
 
 void* SendVals(void* args) { 
@@ -54,10 +56,22 @@ void* MultVals(void* args) {
     int a_val = a_args->array_val;
     close(fd[i%(SIZE/2)][0]);
 
+    // Delete A arg struct
     delete a_args;
+    #ifdef ENABLE_DEBUG
     std::cout << "A args successfully transferred" << std::endl;
-    recv_args->return_val = a_val * b_val;
-    pthread_exit(&recv_args);
+    #endif
+
+    // Delete B arg struct
+    delete recv_args;
+    #ifdef ENABLE_DEBUG
+    std::cout << "B args successfully captured" << std::endl;
+    #endif
+
+    // Calculate return val and return pointer
+    int *return_val = new int;
+    *return_val = a_val * b_val;
+    pthread_exit(return_val);
 }
 
 int main(int argc, char** argv) {
@@ -110,22 +124,25 @@ int main(int argc, char** argv) {
         }
 		
 	}
-    int final;
+    int final = 0;
+    int returned_value;
     for (int i = 0; i < SIZE; i++) {
         void *retval;
         int status = pthread_join(threads[i], &retval);
         if (status) {
-            std::cout << "pthread_join failed" << threads[i] << endl;
+            std::cout << "Error:unable to join thread" << threads[i] << endl;
         }
         if (retval != NULL) {
-            thread_args *thread_return = (thread_args*)retval;
-            int returned_value = thread_return->return_val;
+            int *thread_return = (int*)retval;
+            returned_value = *thread_return;
             final += returned_value;
             delete thread_return;
-            std::cout << "Successful accumulation" << std::endl;
+            #ifdef ENABLE_DEBUG
+            std::cout << "Successful accumulation, current value: " << final << std::endl;
+            #endif
         }
     }
-    std::cout << "Final multiplication result: " << final << endl;
+    std::cout << "Final multiplication result: " << final << std::endl;
 
     return 0;
 }
