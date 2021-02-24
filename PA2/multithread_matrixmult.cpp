@@ -55,6 +55,7 @@ void* MultVals(void* args) {
     close(fd[i%(SIZE/2)][0]);
 
     delete a_args;
+    std::cout << "A args successfully transferred" << std::endl;
     recv_args->return_val = a_val * b_val;
     pthread_exit(&recv_args);
 }
@@ -88,18 +89,20 @@ int main(int argc, char** argv) {
 
         // Create threads
         pthread_t threadA, threadB;
-		threadA = pthread_create(&threadA, NULL, SendVals, args_A);
+        int rcA;
+        int rcB;
+		rcA = pthread_create(&threadA, NULL, SendVals, args_A);
 
-        if (threadA) {
+        if (rcA) {
             std::cout << "Error:unable to create thread," << threadA << std::endl;
             exit(-1);
         } else {
             threads.push_back(std::move(threadA));
         }
 
-        threadB = pthread_create(&threadB, NULL, MultVals, args_B);
+        rcB = pthread_create(&threadB, NULL, MultVals, args_B);
 
-        if (threadB) {
+        if (rcB) {
             std::cout << "Error:unable to create thread," << threadB << std::endl;
             exit(-1);
         } else {
@@ -114,11 +117,13 @@ int main(int argc, char** argv) {
         if (status) {
             std::cout << "pthread_join failed" << threads[i] << endl;
         }
-        // Check memory issues here
-        thread_args *thread_return = (thread_args*)(retval);
-        int returned_value = thread_return->return_val;
-        final += returned_value;
-        delete thread_return;
+        if (retval != NULL) {
+            thread_args *thread_return = (thread_args*)retval;
+            int returned_value = thread_return->return_val;
+            final += returned_value;
+            delete thread_return;
+            std::cout << "Successful accumulation" << std::endl;
+        }
     }
     std::cout << "Final multiplication result: " << final << endl;
 
