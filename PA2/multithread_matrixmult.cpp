@@ -33,10 +33,8 @@ void* SendVals(void* args) {
     thread_args *recv_args = (thread_args*)args;
     int i = recv_args->index;
     
-    // Not reading
-    close(fd[i%(SIZE/2)][0]);
     // Write data to pipe
-    write(fd[i%(SIZE/2)][1], recv_args, sizeof(thread_args));
+    write(fd[i%(SIZE/2)][1], &recv_args, sizeof(thread_args*));
     close(fd[i%(SIZE/2)][1]);
 
     pthread_exit(NULL);
@@ -47,21 +45,18 @@ void* MultVals(void* args) {
     int i = recv_args->index;
     int b_val = recv_args->array_val;
 
-    // Not writing
-    close(fd[i%(SIZE/2)][1]);
     // Read data from pipe -- not really sure what the purpose of piping the data is.. inefficient?
-    void* buf;
-    int received = read(fd[i%(SIZE/2)][0], &buf, sizeof(thread_args));
+    thread_args *a_args;
+    int received = read(fd[i%(SIZE/2)][0], &a_args, sizeof(thread_args*));
     if (received == -1) {
         std::cout << "Error reading from file descriptor" << std::endl;
     }
-    thread_args *a_args = (thread_args*)buf;
     int a_val = a_args->array_val;
     close(fd[i%(SIZE/2)][0]);
 
     delete a_args;
     recv_args->return_val = a_val * b_val;
-    pthread_exit(recv_args);
+    pthread_exit(&recv_args);
 }
 
 int main(int argc, char** argv) {
