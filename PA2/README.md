@@ -10,6 +10,8 @@ Both the size of the vectors and their contents may be modified by editing the c
 Compile using: make
 Run using: ./matrixmult
 
+Must be run on a Linux system due to the use of pipes
+
 # Part 1:
 Multiplying A = [1, 2, 3, 4, 5] and B = [6, 7, 8, 9, 10]
 
