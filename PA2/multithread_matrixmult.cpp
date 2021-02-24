@@ -114,6 +114,7 @@ int main(int argc, char** argv) {
         if (status) {
             std::cout << "pthread_join failed" << threads[i] << endl;
         }
+        // Check memory issues here
         thread_args *thread_return = (thread_args*)(retval);
         int returned_value = thread_return->return_val;
         final += returned_value;
