@@ -19,29 +19,31 @@ For example, send the element in thread 1 (the first element in A) to thread 6 a
 
 // Must be run on Linux system
 
-// TODO: Change to declare pipes globally
+// Global
+int SIZE = 10; // Total number of threads (Inner matrix size * 2)
+int fd[SIZE/2][2]; // Pipes for each pair of values
 
-void SendVals(int val, int fd) {
+
+void SendVals(int i, int val) {
     // Not reading
-    close(fd[0]);
+    close(fd[i%(SIZE/2)][0]);
     // Write data to pipe
-    write(fd[1], val);
-    close(fd[1]);
+    write(fd[i%(SIZE/2)][1], val);
+    close(fd[i%(SIZE/2)][1]);
     pthread_exit(NULL);
 }
 
-void MultVals(int val, int fd) {
+void MultVals(int i, int val) {
     // Not writing
-    close(fd[1]);
+    close(fd[i%(SIZE/2)][1]);
     // Read data from pipe
-    int received = read(fd[0]);
-    close(fd[0]);
+    int received = read(fd[i%(SIZE/2)][0]);
+    close(fd[i%(SIZE/2)][0]);
     pthread_exit((void*)(val * received));
 }
 
 int main(int argc, char** argv) {
 
-    int SIZE = 10;
     // Take A, B value input ? <- see if we need to do this
 
     int A[SIZE/2] = {1, 2, 3, 4, 5};
@@ -50,17 +52,17 @@ int main(int argc, char** argv) {
     // Create threads and send A, B values
     std::vector <pthread_t> threads;
 	
-	for(int i = 0; i < NUM_THREADS/2; i++) {
+	for(int i = 0; i < SIZE/2; i++) {
+        
         // Create pipe
-        int fd[2];
-        status = pipe(fd);
+        status = pipe(fd[i]);
         if (status == -1) {
            std::cout << "Error:unable to create pipe" << std::endl;
         }
 
         // Create threads
         pthread_t threadA, threadB;
-		t1 = pthread_create(&threadA, NULL, SendVals, A[I], fd[1]);
+		t1 = pthread_create(&threadA, NULL, SendVals, i, A[I]);
 
         if (t1) {
             std::cout << "Error:unable to create thread," << t1 << std::endl;
@@ -69,7 +71,7 @@ int main(int argc, char** argv) {
             threads.push_back(std::move(t1));
         }
 
-        t2 = pthread_create(&threadB, NULL, MultVals, B[I], fd[0]);
+        t2 = pthread_create(&threadB, NULL, MultVals, i, B[I]);
 
         if (t2) {
             std::cout << "Error:unable to create thread," << t2 << std::endl;
@@ -80,13 +82,15 @@ int main(int argc, char** argv) {
 		
 	}
     int final;
-    for (int i = 0; i < NUM_THREADS; i++) {
-        void *res;
-        int status = pthread_join(threads[i], &res);
-        if (status == -1) {
+    for (int i = 0; i < SIZE; i++) {
+        void *return_val;
+        int status = pthread_join(threads[i], &return_val);
+        if (status) {
             std::cout << "pthread_join failed" << threads[i] << endl;
         }
-        final = final + *res;
+        if (return_val != NULL) {
+            final = final + return_val;
+        }
     }
     std::cout << "Final multiplication result: " << final << endl;
 
