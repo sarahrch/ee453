@@ -20,26 +20,35 @@ For example, send the element in thread 1 (the first element in A) to thread 6 a
 // Must be run on Linux system
 
 // Global
-int SIZE = 10; // Total number of threads (Inner matrix size * 2)
+const int SIZE = 10; // Total number of threads (Inner matrix size * 2)
 int fd[SIZE/2][2]; // Pipes for each pair of values
 
 
-void SendVals(int i, int val) {
+void SendVals(const void* i, const void* v) {
     // Not reading
     close(fd[i%(SIZE/2)][0]);
     // Write data to pipe
-    write(fd[i%(SIZE/2)][1], val);
+    write(fd[i%(SIZE/2)][1], v, sizeof(int));
     close(fd[i%(SIZE/2)][1]);
     pthread_exit(NULL);
 }
 
-void MultVals(int i, int val) {
+void MultVals(const void* i, const void* v) {
+    // Make sure to cast these values immediately -- will this solve the issue of &i or &v changing
+    // before the values are captured?
+    int i = (int)i;
+    int val = (int)v;
+
     // Not writing
     close(fd[i%(SIZE/2)][1]);
     // Read data from pipe
-    int received = read(fd[i%(SIZE/2)][0]);
+    void* buf;
+    int received = read(fd[i%(SIZE/2)][0], buf, sizeof(int));
+    if (received == -1) {
+        std::cout << "Error reading from file descriptor" << std::endl;
+    }
     close(fd[i%(SIZE/2)][0]);
-    pthread_exit((void*)(val * received));
+    pthread_exit((void*)(val * (int)buf));
 }
 
 int main(int argc, char** argv) {
@@ -55,25 +64,25 @@ int main(int argc, char** argv) {
 	for(int i = 0; i < SIZE/2; i++) {
         
         // Create pipe
-        status = pipe(fd[i]);
+        int status = pipe(fd[i]);
         if (status == -1) {
            std::cout << "Error:unable to create pipe" << std::endl;
         }
 
         // Create threads
         pthread_t threadA, threadB;
-		t1 = pthread_create(&threadA, NULL, SendVals, i, A[I]);
+		threadA = pthread_create(&threadA, NULL, SendVals, i, A[i]);
 
-        if (t1) {
+        if (threadA) {
             std::cout << "Error:unable to create thread," << t1 << std::endl;
             exit(-1);
         } else {
             threads.push_back(std::move(t1));
         }
 
-        t2 = pthread_create(&threadB, NULL, MultVals, i, B[I]);
+        threadB = pthread_create(&threadB, NULL, MultVals, i, B[i]);
 
-        if (t2) {
+        if (threadB) {
             std::cout << "Error:unable to create thread," << t2 << std::endl;
             exit(-1);
         } else {
@@ -81,7 +90,7 @@ int main(int argc, char** argv) {
         }
 		
 	}
-    int final;
+    long final;
     for (int i = 0; i < SIZE; i++) {
         void *return_val;
         int status = pthread_join(threads[i], &return_val);
@@ -89,7 +98,7 @@ int main(int argc, char** argv) {
             std::cout << "pthread_join failed" << threads[i] << endl;
         }
         if (return_val != NULL) {
-            final = final + return_val;
+            final = final + (int)return_val;
         }
     }
     std::cout << "Final multiplication result: " << final << endl;
