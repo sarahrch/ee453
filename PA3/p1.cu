@@ -16,6 +16,10 @@ In this assignment, your task is to add the elements of two 1x65536 arrays (e.g.
 #include <time.h> //--https://www.tutorialspoint.com/c_standard_library/time_h.htm
 #include <cuda_runtime.h> //--https://developer.nvidia.com/blog/even-easier-introduction-cuda and https://docs.nvidia.com/cuda/index.html
 
+// 8 blocks, 512 threads
+#define NUMBLOCKS = 8
+#define BLOCKSIZE = 512
+
 // Function to add each element
 __global__
 void array_add(int n, float *a, float *b) {
@@ -42,8 +46,8 @@ int main(void) {
         b[i] = 2.0f;
     }
 
-    // Run kernel: 8 blocks, 512 threads
-    array_add<<< 8, 512 >>>(N, a, b);
+    // Run kernel
+    array_add<<< NUMBLOCKS, BLOCKSIZE >>>(N, a, b);
 
     // Wait for GPU to finish
     cudaDeviceSynchronize();
