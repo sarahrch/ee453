@@ -13,7 +13,8 @@ In this assignment, your task is to add the elements of two 1x65536 arrays (e.g.
 
 #include <iostream>
 #include <math.h>
-#include <cuda_runtime.h>
+#include <time.h> //--https://www.tutorialspoint.com/c_standard_library/time_h.htm
+#include <cuda_runtime.h> //--https://developer.nvidia.com/blog/even-easier-introduction-cuda and https://docs.nvidia.com/cuda/index.html
 
 // Function to add each element
 __global__
@@ -26,6 +27,9 @@ void array_add(int n, float *a, float *b) {
 int main(void) {
     int N = 65536;
     float *a, *b;
+
+    clock_t start,end;
+	start = clock();
 
     // Unified Mem Allocation
     cudaMallocManaged(&a, N*sizeof(float));
@@ -61,6 +65,10 @@ int main(void) {
     // Free Mem
     cudaFree(a);
     cudaFree(b);
+
+    end = clock();
+    double timeElapsed = ((double)((end-start)))/(double)(CLOCKS_PER_SEC);
+    std::cout << "Time: " << timeElapsed << " seconds" << std::endl;
 
     return 0;
 }
