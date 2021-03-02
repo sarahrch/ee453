@@ -23,7 +23,9 @@ In this assignment, your task is to add the elements of two 1x65536 arrays (e.g.
 // Function to add each element
 __global__
 void array_add(int n, float *a, float *b) {
-    for (int i = 0; i < n; i++) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    int stride = blockDim.x * gridDim.x;
+    for (int i = index; i < n; i += stride) {
         b[i] = a[i] + b[i];
     }
 }
