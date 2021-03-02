@@ -41,7 +41,7 @@ int main(void) {
     cudaMallocManaged(&a, N*sizeof(float));
     cudaMallocManaged(&b, N*sizeof(float));
 
-    // Initialize x and y
+    // Initialize a and b
     for (int i = 0; i < N; i++)
     {
         a[i] = 1.0f;
