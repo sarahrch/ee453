@@ -15,6 +15,7 @@ In this assignment, your task is to add the elements of two 1x65536 arrays (e.g.
 #include <math.h>
 #include <time.h> //--https://www.tutorialspoint.com/c_standard_library/time_h.htm
 #include <cuda_runtime.h> //--https://developer.nvidia.com/blog/even-easier-introduction-cuda and https://docs.nvidia.com/cuda/index.html
+#include <device_launch_parameters.h> //--https://stackoverflow.com/questions/6061565/setting-up-visual-studio-intellisense-for-cuda-kernel-calls
 
 // 8 blocks, 512 threads
 #define NUMBLOCKS = 8
@@ -49,7 +50,7 @@ int main(void) {
     }
 
     // Run kernel
-    array_add<<< NUMBLOCKS, BLOCKSIZE >>>(N, a, b);
+    array_add <<<NUMBLOCKS, BLOCKSIZE>>>(N, a, b);
 
     // Wait for GPU to finish
     cudaDeviceSynchronize();
