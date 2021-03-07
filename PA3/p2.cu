@@ -16,14 +16,10 @@ In this assignment, your task is to multiply the elements of two 1024x1024 array
 #include <time.h> //--https://www.tutorialspoint.com/c_standard_library/time_h.htm
 #include <cuda_runtime.h> //--https://developer.nvidia.com/blog/even-easier-introduction-cuda and https://docs.nvidia.com/cuda/index.html
 
-// 32x32 threads per block and 32x32 blocks per grid
-#define GRIDSIZE = 1
-#define NUMBLOCKS = 1024
-#define BLOCKSIZE = 1024
 
 // Function to dot a row of A with a column of B
 __global__
-void dot(int n, float **a, float **b, float **c) {
+void dot(int n, float *a, float *b) {
 
     for (int i = 0; i < n; i ++) {
         c[blockIdx.x][threadIdx.x] += a[blockIdx.x][i] * b[i][threadIdx.x];
@@ -31,12 +27,12 @@ void dot(int n, float **a, float **b, float **c) {
 }
 
 int main(void) {
-    int N = 1024;
-    float **a, **b, **c;
+    #define N = 1024;
 
     clock_t start,end;
 	start = clock();
 
+    /*
     // Unified Mem Allocation
     cudaMallocManaged(&&a, N*sizeof(float*));
     for (int i = 0; i < N; i++) {
@@ -49,21 +45,43 @@ int main(void) {
     cudaMallocManaged(&&c, N*sizeof(float*));
     for (int i = 0; i < N; i++) {
         cudaMallocManaged(c[i], N*sizeof(float)); 
-    } 
-
+    } */
     // Initialize a, b, c
-    for (int i = 0; i < N; i++)
-    {
-        for (int j = 0; j < N; j++)
-        {
-            a[i][j] = 1.0f;
-            b[i][j] = 2.0f;
-            c[i][j] = 0.0f;
+
+    // TODO: CHANGE THIS TO JUST BE CONTIGUOUS ARRAY??
+
+    float** A = new float*[N];
+    // Allocate entire 1024x1024 array in contiguous mem
+    A[0] = new float[N * N];
+    // Assign a pointer to each new "row" in contiguous mem
+    for (int i = 1; i < N; ++i) {
+        A[i] = A[i-1] + N;
+    }
+
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < N; ++j) {
+            A[i][j] = 1.0f;
+            B[i][j] = 2.0f;
         }
     }
 
-    // Run kernel
-    dot<<< NUMBLOCKS, BLOCKSIZE >>>(N, a, b);
+    // get pointer to allocated device (GPU) memory
+    float *dA;
+    cudaMalloc((void **)&dA, sizeof(float) * N * N);
+    float *dB;
+    cudaMalloc((void **)&dB, sizeof(float) * N * N);
+
+    // copy host memory to device (pointing at A[0])
+    cudaMemcpy(dA, A[0], sizeof(float) * N * N, cudaMemcpyHostToDevice);
+    cudaMemcpy(dB, B[0], sizeof(float) * N * N, cudaMemcpyHostToDevice);
+
+    // Set dimensions
+    dim3 grid(32,32); // Grid = 32x32 blocks
+    dim3 block(32,32); // Block = 32x32 threads
+
+
+    // Run kernel -- 32x32 threads per block and 32x32 blocks per grid
+    dot<<<grid,block>>>(N, dA, dB);
 
     // Wait for GPU to finish
     cudaDeviceSynchronize();
