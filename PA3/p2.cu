@@ -34,7 +34,7 @@ void dot(int N, float *a, float *b, float *c) {
     c[row * N + col] = ans;
 }
 
-int main(void) {
+int main() {
     #define N = 1024;
 
     clock_t start,end;
@@ -71,13 +71,13 @@ int main(void) {
     {
         for (int j = 0; j < N; j++)
         {
-            maxError = fmax(maxError, fabs(c[i][j]-2.0f));
+            maxError = fmax(maxError, fabs(c[i * N + j]-2.0f));
         }
     }
     std::cout << "Max Error: " << maxError << std::endl;
 
     // Print C[453][453]
-    std::cout << c[453][453] << std::endl;
+    std::cout << c[453 * N + 453] << std::endl;
 
     // Free Mem
     cudaFree(a);
@@ -85,7 +85,7 @@ int main(void) {
     cudaFree(c);
 
     end = clock();
-    double timeElapsed = ((double)((end-start)))/(double)(CLOCKS_PER_SEC);
+    double timeElapsed = ((double)((end-start)))/((double)(CLOCKS_PER_SEC));
     std::cout << "Time: " << timeElapsed << " seconds" << std::endl;
 
     return 0;
