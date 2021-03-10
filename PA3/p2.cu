@@ -19,11 +19,19 @@ In this assignment, your task is to multiply the elements of two 1024x1024 array
 
 // Function to dot a row of A with a column of B
 __global__
-void dot(int n, float *a, float *b) {
-
-    for (int i = 0; i < n; i ++) {
-        c[blockIdx.x][threadIdx.x] += a[blockIdx.x][i] * b[i][threadIdx.x];
+void dot(int N, float *a, float *b, float *c) {
+    // Find thread position
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    // Calculate dot of a row with a col
+    float ans = 0;
+    for (int i = 0; i < N; i++) {
+        ans += a[N * row + i] + b[i * N + col];
     }
+
+    // Store in matrix c
+    c[row * N + col] = ans;
 }
 
 int main(void) {
@@ -32,56 +40,27 @@ int main(void) {
     clock_t start,end;
 	start = clock();
 
-    /*
-    // Unified Mem Allocation
-    cudaMallocManaged(&&a, N*sizeof(float*));
-    for (int i = 0; i < N; i++) {
-        cudaMallocManaged(a[i], N*sizeof(float)); 
-    }  
-    cudaMallocManaged(&&b, N*sizeof(float*));
-    for (int i = 0; i < N; i++) {
-        cudaMallocManaged(b[i], N*sizeof(float)); 
-    } 
-    cudaMallocManaged(&&c, N*sizeof(float*));
-    for (int i = 0; i < N; i++) {
-        cudaMallocManaged(c[i], N*sizeof(float)); 
-    } */
-    // Initialize a, b, c
+    float *a, *b, *c;
 
-    // TODO: CHANGE THIS TO JUST BE CONTIGUOUS ARRAY??
+    // Allcoate 1024x1024 matrix as 1-D array in unified memory
+    cudaMallocManaged(&a, N*N*sizeof(float));
+    cudaMallocManaged(&b, N*N*sizeof(float));
+    cudaMallocManaged(&c, N*N*sizeof(float));
 
-    float** A = new float*[N];
-    // Allocate entire 1024x1024 array in contiguous mem
-    A[0] = new float[N * N];
-    // Assign a pointer to each new "row" in contiguous mem
-    for (int i = 1; i < N; ++i) {
-        A[i] = A[i-1] + N;
+    // Initialize matrices
+    for (int i = 0; i < N*N; i++)
+    {
+        a[i] = 1.0f;
+        b[i] = 2.0f;
+        c[i] = 0.0f;
     }
-
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            A[i][j] = 1.0f;
-            B[i][j] = 2.0f;
-        }
-    }
-
-    // get pointer to allocated device (GPU) memory
-    float *dA;
-    cudaMalloc((void **)&dA, sizeof(float) * N * N);
-    float *dB;
-    cudaMalloc((void **)&dB, sizeof(float) * N * N);
-
-    // copy host memory to device (pointing at A[0])
-    cudaMemcpy(dA, A[0], sizeof(float) * N * N, cudaMemcpyHostToDevice);
-    cudaMemcpy(dB, B[0], sizeof(float) * N * N, cudaMemcpyHostToDevice);
 
     // Set dimensions
     dim3 grid(32,32); // Grid = 32x32 blocks
     dim3 block(32,32); // Block = 32x32 threads
 
-
     // Run kernel -- 32x32 threads per block and 32x32 blocks per grid
-    dot<<<grid,block>>>(N, dA, dB);
+    dot<<<grid,block>>>(N, a, b, c);
 
     // Wait for GPU to finish
     cudaDeviceSynchronize();
@@ -101,17 +80,8 @@ int main(void) {
     std::cout << c[453][453] << std::endl;
 
     // Free Mem
-    for(int i = 0; i < N; i++) {
-        cudaFree(a[i]);
-    } 
-    cudaFree(a); 
-    for(int i = 0; i < N; i++) {
-        cudaFree(b[i]);
-    }  
+    cudaFree(a);
     cudaFree(b);
-    for(int i = 0; i < N; i++) {
-        cudaFree(c[i]);
-    }  
     cudaFree(c);
 
     end = clock();
