@@ -27,7 +27,7 @@ void dot(int N, float *a, float *b, float *c) {
     // Calculate dot of a row with a col
     float ans = 0;
     for (int i = 0; i < N; i++) {
-        ans += a[N * row + i] + b[i * N + col];
+        ans += a[N * row + i] * b[i * N + col];
     }
 
     // Store in matrix c
@@ -52,7 +52,6 @@ int main() {
     {
         a[i] = 1.0f;
         b[i] = 2.0f;
-        c[i] = 0.0f;
     }
 
     // Set dimensions
@@ -71,7 +70,7 @@ int main() {
     {
         for (int j = 0; j < N; j++)
         {
-            maxError = fmax(maxError, fabs(c[i * N + j]-2.0f));
+            maxError = fmax(maxError, fabs(c[i * N + j] - 2048.0f));
         }
     }
     std::cout << "Max Error: " << maxError << std::endl;
