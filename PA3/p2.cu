@@ -35,7 +35,7 @@ void dot(int N, float *a, float *b, float *c) {
 }
 
 int main() {
-    #define N = 1024;
+    int N = 1024;
 
     clock_t start,end;
 	start = clock();
