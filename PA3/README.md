@@ -26,7 +26,8 @@ Details:
 -The value of each element of B is 2
 
 Execution Time: 0.189969 seconds
-Value of C[453][453] = 2048 which is expected because 1*2*1024 = 2048
+Value of C[453][453] = 2048
+--> This is expected because 1*2*1024 = 2048
 
 # Compilation and Execution
 Compilation requires nvcc
