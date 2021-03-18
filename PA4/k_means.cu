@@ -21,6 +21,21 @@ You can display the output image by using the given Matlab script file.
 */
 
 __global__
-void k_means(unsigned char *a, char mean_c1, char mean_c2, char mean_c3, char mean_c4, int size) {
-
+unsigned char k_means(unsigned char *a, unsigned char *cluster, unsigned char mean_c1, unsigned char mean_c2, unsigned char mean_c3, unsigned char mean_c4) {
+    // Calculate the distances from each value to current means to find which cluster is closest, stores cluster of index in cluster array
+    int index = blockDim.x * blockIdx.x + threadIdx.x;
+    unsigned char min_dist = a[index] - mean_c1;
+    cluster[index] = 1;
+    if (a[index] - mean_c2 < min_dist) {
+        min_dist = a[index] - mean_c2;
+        cluster[index] = 2;
+    }
+    if (a[index] - mean_c3 < min_dist) {
+        min_dist = a[index] - mean_c3;
+        cluster[index] = 3;
+    }
+    if (a[index] - mean_c4 < min_dist) {
+        min_dist = a[index] - mean_c4;
+        cluster[index] = 4;
+    }
 }
