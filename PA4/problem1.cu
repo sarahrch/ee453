@@ -4,7 +4,7 @@
 #include <omp.h>
 #include <iostream>
 
-#include <k_means.cu>
+//#include <k_means.cu>
 
 #define h  800 
 #define w  800
@@ -12,8 +12,28 @@
 #define input_file  "input.raw"
 #define output_file "output.raw"
 
+__global__
+void k_means(unsigned char *a, unsigned char *cluster, unsigned char mean_c1, unsigned char mean_c2, unsigned char mean_c3, unsigned char mean_c4) {
+    // Calculate the distances from each value to current means to find which cluster is closest, stores cluster of index in cluster array
+    int index = blockDim.x * blockIdx.x + threadIdx.x;
+    unsigned char min_dist = a[index] - mean_c1;
+    cluster[index] = 1;
+    if (a[index] - mean_c2 < min_dist) {
+        min_dist = a[index] - mean_c2;
+        cluster[index] = 2;
+    }
+    if (a[index] - mean_c3 < min_dist) {
+        min_dist = a[index] - mean_c3;
+        cluster[index] = 3;
+    }
+    if (a[index] - mean_c4 < min_dist) {
+        min_dist = a[index] - mean_c4;
+        cluster[index] = 4;
+    }
+}
+
 int main(int argc, char** argv){
-    int i;
+	// GIVEN CODE STARTS HERE ----
     FILE *fp;
 
   	unsigned char *a = (unsigned char*) malloc (sizeof(unsigned char)*h*w);
@@ -25,15 +45,15 @@ int main(int argc, char** argv){
 	}
 	fread(a, sizeof(unsigned char), w*h, fp);
 	fclose(fp);
+	// GIVEN CODE ENDS HERE ----
     
-	// MY CODE STARTS HERE -------
 	// measure the start time here
 	clock_t start,end;
 	start = clock();
 
 	int size = h * w;
 
-	// Define means
+	// Define initial means
 	unsigned char cluster1_mean = 0;
 	unsigned char cluster2_mean = 85;
 	unsigned char cluster3_mean = 170;
@@ -55,10 +75,17 @@ int main(int argc, char** argv){
 
 		cudaDeviceSynchronize();
 
-		int c1_total, c2_total, c3_total, c4_total = 0;
-		unsigned char c1_vals, c2_vals, c3_vals, c4_vals = 0;
+		// Initialize values for calculating new means
+		int c1_total = 0;
+		int c2_total = 0;
+		int c3_total = 0;
+		int c4_total = 0;
+		unsigned char c1_vals = 0;
+		unsigned char c2_vals = 0;
+		unsigned char c3_vals = 0;
+		unsigned char c4_vals = 0;
 
-		for (int i = 0; i < size; i++) {
+		for (int j = 0; j < size; j++) {
 			if (clusters[i] == 1) {
 				c1_total += a[i];
 				c1_vals++;
@@ -82,12 +109,15 @@ int main(int argc, char** argv){
 	}	
 
 	// Write to output.raw
+
+	// GIVEN CODE STARTS HERE ----
 	if (!(fp=fopen(output_file,"wb"))) {
 		printf("can not opern file\n");
 		return 1;
 	}	
 	fwrite(a, sizeof(unsigned char),w*h, fp);
     fclose(fp);
+	// GIVEN CODE ENDS HERE ----
 
 	// Free Mem
     cudaFree(clusters);
