@@ -19,18 +19,18 @@ __global__
 void k_means(unsigned char *a, int *cluster, int mean_c1, int mean_c2, int mean_c3, int mean_c4) {
     // Calculate the distances from each value to current means to find which cluster is closest, stores cluster of index in cluster array
     int index = blockDim.x * blockIdx.x + threadIdx.x;
-    int min_dist = (int)a[index] - mean_c1;
+    int min_dist = abs((int)a[index] - mean_c1);
     cluster[index] = 1;
-    if ((int)a[index] - mean_c2 < min_dist) {
-        min_dist = (int)a[index] - mean_c2;
+    if (abs((int)a[index] - mean_c2) < min_dist) {
+        min_dist = abs((int)a[index] - mean_c2);
         cluster[index] = 2;
     }
-    if ((int)a[index] - mean_c3 < min_dist) {
-        min_dist = (int)a[index] - mean_c3;
+    if (abs((int)a[index] - mean_c3) < min_dist) {
+        min_dist = abs((int)a[index] - mean_c3);
         cluster[index] = 3;
     }
-    if ((int)a[index] - mean_c4 < min_dist) {
-        min_dist = (int)a[index] - mean_c4;
+    if (abs((int)a[index] - mean_c4) < min_dist) {
+        min_dist = abs((int)a[index] - mean_c4);
         cluster[index] = 4;
     }
 }
