@@ -20,3 +20,7 @@ In the report, you need to include:
 You can display the output image by using the given Matlab script file.
 */
 
+__global__
+void k_means(unsigned char *a, char mean_c1, char mean_c2, char mean_c3, char mean_c4, int size) {
+
+}
