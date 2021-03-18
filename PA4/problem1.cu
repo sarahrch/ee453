@@ -3,6 +3,7 @@
 #include <math.h>
 #include <omp.h>
 #include <iostream>
+#include <cuda_runtime.h> //--https://developer.nvidia.com/blog/even-easier-introduction-cuda and https://docs.nvidia.com/cuda/index.html
 
 //#include <k_means.cu>
 
@@ -12,22 +13,24 @@
 #define input_file  "input.raw"
 #define output_file "output.raw"
 
+using namespace std;
+
 __global__
-void k_means(unsigned char *a, unsigned char *cluster, unsigned char mean_c1, unsigned char mean_c2, unsigned char mean_c3, unsigned char mean_c4) {
+void k_means(unsigned char *a, int *cluster, int mean_c1, int mean_c2, int mean_c3, int mean_c4) {
     // Calculate the distances from each value to current means to find which cluster is closest, stores cluster of index in cluster array
     int index = blockDim.x * blockIdx.x + threadIdx.x;
-    unsigned char min_dist = a[index] - mean_c1;
+    int min_dist = (int)a[index] - mean_c1;
     cluster[index] = 1;
-    if (a[index] - mean_c2 < min_dist) {
-        min_dist = a[index] - mean_c2;
+    if ((int)a[index] - mean_c2 < min_dist) {
+        min_dist = (int)a[index] - mean_c2;
         cluster[index] = 2;
     }
-    if (a[index] - mean_c3 < min_dist) {
-        min_dist = a[index] - mean_c3;
+    if ((int)a[index] - mean_c3 < min_dist) {
+        min_dist = (int)a[index] - mean_c3;
         cluster[index] = 3;
     }
-    if (a[index] - mean_c4 < min_dist) {
-        min_dist = a[index] - mean_c4;
+    if ((int)a[index] - mean_c4 < min_dist) {
+        min_dist = (int)a[index] - mean_c4;
         cluster[index] = 4;
     }
 }
@@ -46,7 +49,7 @@ int main(int argc, char** argv){
 	fread(a, sizeof(unsigned char), w*h, fp);
 	fclose(fp);
 	// GIVEN CODE ENDS HERE ----
-    
+
 	// measure the start time here
 	clock_t start,end;
 	start = clock();
@@ -54,18 +57,20 @@ int main(int argc, char** argv){
 	int size = h * w;
 
 	// Define initial means
-	unsigned char cluster1_mean = 0;
-	unsigned char cluster2_mean = 85;
-	unsigned char cluster3_mean = 170;
-	unsigned char cluster4_mean = 255;
+	int cluster1_mean = 0;
+	int cluster2_mean = 85;
+	int cluster3_mean = 170;
+	int cluster4_mean = 255;
 
-	unsigned char *clusters;
-	cudaMallocManaged(&clusters, size*sizeof(unsigned char));
+	int *clusters;
+	cudaMallocManaged(&clusters, size*sizeof(int));
 
 	// Initialize all clusters to 0
 	for (int i = 0; i < size; i++) {
 		clusters[i] = 0;
 	}
+
+	std::cout << clusters[15] << std::endl;
 
 	// Run 30 iterations of k-means
 	for (int i = 0; i < 30; i++) {
@@ -80,27 +85,33 @@ int main(int argc, char** argv){
 		int c2_total = 0;
 		int c3_total = 0;
 		int c4_total = 0;
-		unsigned char c1_vals = 0;
-		unsigned char c2_vals = 0;
-		unsigned char c3_vals = 0;
-		unsigned char c4_vals = 0;
+		int c1_vals = 0;
+		int c2_vals = 0;
+		int c3_vals = 0;
+		int c4_vals = 0;
 
 		for (int j = 0; j < size; j++) {
-			if (clusters[i] == 1) {
-				c1_total += a[i];
+			std::cout << "testing all" << std::endl;
+			if (clusters[j] == 1) {
+				c1_total += (int)a[j];
 				c1_vals++;
-			} else if (clusters[i] == 2) {
-				c2_total += a[i];
+				std::cout << "1" <<std::endl;
+			} else if (clusters[j] == 2) {
+				c2_total += (int)a[j];
 				c2_vals++;
-			} else if (clusters[i] == 3) {
-				c3_total += a[i];
+				std::cout << "2" <<std::endl;
+			} else if (clusters[j] == 3) {
+				c3_total += (int)a[j];
 				c3_vals++;
-			} else if (clusters[i] == 4) {
-				c4_total += a[i];
+				std::cout << "3" <<std::endl;
+			} else if (clusters[j] == 4) {
+				c4_total += (int)a[j];
 				c4_vals++;
+				std::cout << "4" <<std::endl;
+			} else {
+				std::cout << clusters[j] << std::endl;
 			}
 		}
-
 		cluster1_mean = c1_total/c1_vals;
 		cluster2_mean = c2_total/c2_vals;
 		cluster3_mean = c3_total/c3_vals;
