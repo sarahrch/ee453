@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <omp.h>
+#include <iostream>
 
 #include <k_means.cu>
 
@@ -27,6 +28,9 @@ int main(int argc, char** argv){
     
 	// MY CODE STARTS HERE -------
 	// measure the start time here
+	clock_t start,end;
+	start = clock();
+
 	int size = h * w;
 
 	// Define means
@@ -67,8 +71,6 @@ int main(int argc, char** argv){
 			} else if (clusters[i] == 4) {
 				c4_total += a[i];
 				c4_vals++;
-			} else {
-				std::cout << "Error with clustering" << std::endl;
 			}
 		}
 
@@ -76,21 +78,26 @@ int main(int argc, char** argv){
 		cluster2_mean = c2_total/c2_vals;
 		cluster3_mean = c3_total/c3_vals;
 		cluster4_mean = c4_total/c4_vals;
+		std::cout << "Means for iteration " << i << ": c1=" << cluster1_mean << " c2= " << cluster2_mean << " c3= " << cluster3_mean << " c4= " << cluster4_mean << std::endl;
 	}	
-	
-	// measure the end time here
-	
-	// print out the execution time here
-	
 
-	// MY CODE ENDS HERE --------
-	
+	// Write to output.raw
 	if (!(fp=fopen(output_file,"wb"))) {
 		printf("can not opern file\n");
 		return 1;
 	}	
 	fwrite(a, sizeof(unsigned char),w*h, fp);
     fclose(fp);
+
+	// Free Mem
+    cudaFree(clusters);
+	
+	// measure the end time here
+    end = clock();
+    double timeElapsed = ((double)((end-start)))/(double)(CLOCKS_PER_SEC);
+
+	// print out the execution time here
+    std::cout << "Time: " << timeElapsed << " seconds" << std::endl;
     
     return 0;
 }
