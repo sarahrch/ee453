@@ -136,6 +136,19 @@ int main(int argc, char** argv){
 		// std::cout << "Means for iteration " << i << ": c1=" << cluster1_mean << " c2= " << cluster2_mean << " c3= " << cluster3_mean << " c4= " << cluster4_mean << std::endl;
 	}	
 
+	// Replace all values of a with the cluster mean
+	for (int i = 0; i < size; i++) {
+		if (clusters[i] == 1) {
+			a[i] = cluster1_mean;
+		} else if (clusters[i] == 2) {
+			a[i] = cluster2_mean;
+		} else if (clusters[i] == 3) {
+			a[i] = cluster3_mean;
+		} else if (clusters[i] == 4) {
+			a[i] = cluster4_mean;
+		}
+	}
+
 	// Write to output.raw
 
 	// GIVEN CODE STARTS HERE ----
