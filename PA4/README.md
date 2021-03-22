@@ -8,8 +8,9 @@ Compilation requires nvcc
 
 # Program Description
 This program uses CUDA programming to parallel compute the "distance" between a value and four mean cluster values for the k-means algorithm.
-Input: input.raw image
-Output: output.raw image with k-means classification
+Input: input.raw
+Output: output.raw of data after k-means classification
+    - output_figure.png included
 
 Details:
 - Using 800*800 threads (1250 blocks of 512 threads each)
