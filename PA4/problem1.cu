@@ -132,7 +132,8 @@ int main(int argc, char** argv){
 		cluster2_mean = c2_total/c2_vals;
 		cluster3_mean = c3_total/c3_vals;
 		cluster4_mean = c4_total/c4_vals;
-		std::cout << "Means for iteration " << i << ": c1=" << cluster1_mean << " c2= " << cluster2_mean << " c3= " << cluster3_mean << " c4= " << cluster4_mean << std::endl;
+		// FOR DEBUGGING:
+		// std::cout << "Means for iteration " << i << ": c1=" << cluster1_mean << " c2= " << cluster2_mean << " c3= " << cluster3_mean << " c4= " << cluster4_mean << std::endl;
 	}	
 
 	// Write to output.raw
@@ -148,6 +149,7 @@ int main(int argc, char** argv){
 
 	// Free Mem
     cudaFree(clusters);
+	cudaFree(a);
 	
 	// measure the end time here
     end = clock();
